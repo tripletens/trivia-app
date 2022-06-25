@@ -119,9 +119,7 @@ COPY public.categories (id, type) FROM stdin;
 \.
 
 
---
--- Data for Name: questions; Type: TABLE DATA; Schema: public; Owner: student
---
+
 
 COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 5	Whose autobiography is entitled 'I Know Why the Caged Bird Sings'?	Maya Angelou	2	4
@@ -135,6 +133,7 @@ COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 13	What is the largest lake in Africa?	Lake Victoria	2	3
 \.
 
+COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 14	In which royal palace would you find the Hall of Mirrors?	The Palace of Versailles	3	3
 15	The Taj Mahal is located in which Indian city?	Agra	2	3
 17	La Giaconda is better known as what?	Mona Lisa	3	2

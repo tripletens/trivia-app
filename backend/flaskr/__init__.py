@@ -1,14 +1,17 @@
 from crypt import methods
 from inspect import Parameter
 import os
+import random
 from sre_constants import SUCCESS
 from tkinter import EXCEPTION
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import random
+
 
 from models import setup_db, Question, Category
+
+QUESTIONS_PER_PAGE = 10
 
 def create_app(test_config=None):
     # create and configure the app
@@ -16,7 +19,7 @@ def create_app(test_config=None):
     setup_db(app)
 
     CORS(app, resources={r"/*": {"origins": "*"}})
-
+    
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
     """
@@ -30,11 +33,12 @@ def create_app(test_config=None):
         return response
 
     """
+    
     @TODO:
     Create an endpoint to handle GET requests
     for all available categories.
     """
-    @app.route('/categories')
+    @app.route('/categories', methods=['GET'])
     def fetch_all_categories():
         try:
             categories = Category.query.all()
@@ -47,7 +51,7 @@ def create_app(test_config=None):
             })
         except EXCEPTION:
             abort(500)
-
+    
     """
     @TODO:
     Create an endpoint to handle GET requests for questions,
@@ -55,20 +59,26 @@ def create_app(test_config=None):
     This endpoint should return a list of questions,
     number of total questions, current category, categories.
     """
+    
     @app.route('/questions', methods=['GET'])
     def get_questions():
         try:
             page = request.args.get('page', 1, type=int)
+            questions = Question.query.all()
+            total_questions = len(questions)
+        
             start = (page - 1) * 10
             end = start + 10
-            questions = Question.query.all()
             formatted_questions = [question.format() for question in questions]
 
-            total_questions = len(questions)
+            # if the page number is not found
+            if (len(formatted_questions[start:end]) == 0):
+                abort(404)
+
             categories = Category.query.all()
             formatted_category = [singleCat.type for singleCat in categories]
             current_category = None
-            # if the page number is not found
+
             if (len(formatted_category) == 0):
                 abort(404)
 
@@ -78,12 +88,11 @@ def create_app(test_config=None):
                 'total_questions':  total_questions,
                 'categories': formatted_category,
                 'current_category': current_category,
-                # 'current_category': "current_category",
             }), 200
 
         except Exception as e:
             print(e)
-            abort(400)
+            abort(422)
     """
     TEST: At this point, when you start the application
     you should see questions and categories generated,
@@ -113,14 +122,14 @@ def create_app(test_config=None):
 
             return jsonify({
                 'success': True,
-                # 'deleted': question_id,
+                'question_id': id,
                 'total_questions': total_questions,
                 'question': question.format(),
             })
         except:
-            abort(422)
+            abort(404)
     """
-    @TODO:
+    @DONE:
     Create an endpoint to POST a new question,
     which will require the question and answer text,
     category, and difficulty score.
@@ -142,40 +151,42 @@ def create_app(test_config=None):
         question_answer = body.get('answer')
         question_difficulty = body.get('difficulty')
         question_category = body.get('category')
-
+        
+        
         # ensure all fields are filled
         if ((question_title is None) or (question_answer is None) or
                 (question_difficulty is None) or (question_category is None)):
             abort(422)
 
-        try:
-            # Create and insert new question
-            question = Question(
-                question=question_title,
-                answer=question_answer,
-                difficulty=question_difficulty,
-                category=question_category
-            )
+        # create new question
+        question = Question(
+            question=question_title,
+            answer=question_answer,
+            difficulty=question_difficulty,
+            category=question_category
+        )
 
-            question.insert()
+        question.insert()
 
-            # get all questions and paginate
-            questions = Question.query.all()
-            page = request.args.get('page', 1, type=int)
-            start = (page - 1) * 10
-            end = start + 10
-            formatted_questions = [question.format() for question in questions]
-            total_questions = len(questions)
+        # get all questions and paginate
+        questions = Question.query.all()
+        page = request.args.get('page', 1, type=int)
+        start = (page - 1) * 10
+        end = start + 10
+        formatted_questions = [question.format() for question in questions]
+        total_questions = len(questions)
 
-            return jsonify({
-                'success': True,
-                'created': question.id,
-                'question_created': question.question,
-                'questions': formatted_questions[start:end],
-                'total_questions': total_questions
-            })
-        except:
-            abort(422)
+        if(len(formatted_questions[start:end]) == 0):
+            abort(404)
+                
+        return jsonify({
+            'success': True,
+            'question_id': question.id,
+            'question_created': question.question,
+            'questions': formatted_questions[start:end],
+            'total_questions': total_questions
+        })
+       
     """
     @DONE:
     Create a POST endpoint to get questions based on a search term.
@@ -205,7 +216,9 @@ def create_app(test_config=None):
                 questions = Question.query.all()
                 formatted_questions = [question.format()
                                        for question in search_results]
-
+                if (len(formatted_questions[start:end]) == 0):
+                    abort(404)
+                
                 return jsonify({
                     'success': True,
                     'questions':  formatted_questions[start:end],
@@ -233,7 +246,7 @@ def create_app(test_config=None):
         try:
             # get questions matching the category
             result = Question.query.filter_by(category=category.id).all()
-
+            # print({result})
             # paginate the result questions
             page = request.args.get('page', 1, type=int)
             start = (page - 1) * 10
@@ -248,7 +261,7 @@ def create_app(test_config=None):
                 'current_category': category.type
             })
         except:
-            abort(400)
+            abort(422)
 
     """
     @TODO:
@@ -261,7 +274,82 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
+    @app.route('/quizzes', methods=['POST'])
+    def get_quiz_questions():
+        # Get user input
+        body = request.get_json()
+        previous_questions = body.get('previous_questions')
+        quiz_category = body.get('quiz_category')
+        questions = Question.query.all()
 
+        # If a category has been selected, get questions from matching category
+        # If no category has been selected, get all questions
+        try:
+            if quiz_category:
+                result = Question.query.filter_by(category=quiz_category['id']).filter(
+                    Question.id.notin_(previous_questions)).all()
+            else:
+                result = Question.query.filter(
+                    Question.id.notin_(previous_questions)).all()
+
+            # get a random question from the result
+            next_question = random.choice(result)
+            # check if we have exhausted the questions
+            # next_question = get_random_question()
+
+            # used = False
+            # if next_question['id'] in previous_questions:
+            #     used = True
+
+            # while used:
+            #     next_question = random.choice(questions).format()
+
+            #     if (len(previous_questions) == len(questions)):
+            #         return jsonify({
+            #             'success': True,
+            #             'message': "game over"
+            #         }), 200
+
+            return jsonify({
+                'success': True,
+                'question': next_question.format()
+            })
+        # if user selected a category
+        # if previous_questions['id'] != 0:
+        #     questions = Question.query.filter_by(
+        #         category=previous_questions['id']).all()
+        # # if user selected "All"
+        # else:
+        #     questions = Question.query.all()
+
+        # def get_random_question():
+        #     next_question = random.choice(questions).format()
+        #     return next_question
+
+        # next_question = get_random_question()
+
+        # used = False
+        # if next_question['id'] in previous_questions:
+        #     used = True
+
+        # while used:
+        #     next_question = random.choice(questions).format()
+
+        #     if (len(previous_questions) == len(questions)):
+        #         return jsonify({
+        #             'success': True,
+        #             'message': "game over"
+        #         }), 200
+
+        # return jsonify({
+        #     'success': True,
+        #     'question': next_question
+        # }), 200
+        # except:
+        #     abort(400)
+
+        except:
+            abort(400)
     """
     @TODO:
     Create error handlers for all expected errors

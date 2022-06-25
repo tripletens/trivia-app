@@ -18,6 +18,7 @@ class QuestionView extends Component {
 
   componentDidMount() {
     this.getQuestions();
+    console.log(this.state.categories);
   }
 
   getQuestions = () => {
@@ -31,6 +32,7 @@ class QuestionView extends Component {
           categories: result.categories,
           currentCategory: result.current_category,
         });
+        console.log(result.categories);
         return;
       },
       error: (error) => {
@@ -73,10 +75,13 @@ class QuestionView extends Component {
           totalQuestions: result.total_questions,
           currentCategory: result.current_category,
         });
+        console.log(id);
+        console.log(result.current_category);
         return;
       },
       error: (error) => {
         alert('Unable to load questions. Please try your request again');
+        console.log(id);
         return;
       },
     });
@@ -142,7 +147,7 @@ class QuestionView extends Component {
               <li
                 key={id}
                 onClick={() => {
-                  this.getByCategory(id);
+                  this.getByCategory(parseInt(id) + 1);
                 }}
               >
                 {this.state.categories[id]}
