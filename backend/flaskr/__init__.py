@@ -277,79 +277,41 @@ def create_app(test_config=None):
     @app.route('/quizzes', methods=['POST'])
     def get_quiz_questions():
         # Get user input
-        body = request.get_json()
-        previous_questions = body.get('previous_questions')
-        quiz_category = body.get('quiz_category')
-        questions = Question.query.all()
-
         # If a category has been selected, get questions from matching category
         # If no category has been selected, get all questions
         try:
+            body = request.get_json()
+            previous_questions = body.get('previous_questions')
+            quiz_category = body.get('quiz_category')
+            questions = Question.query.all()
+            
+            if (len(previous_questions) == len(questions)):
+                return jsonify({
+                    'success': True,
+                    'message': "game over"
+            }), 200
+                
             if quiz_category:
-                result = Question.query.filter_by(category=quiz_category['id']).filter(
-                    Question.id.notin_(previous_questions)).all()
+                result = Question.query.filter_by(category=quiz_category['id']).filter(Question.id.notin_(previous_questions)).all()
             else:
-                result = Question.query.filter(
-                    Question.id.notin_(previous_questions)).all()
+                result = Question.query.filter(Question.id.notin_(previous_questions)).all()
 
             # get a random question from the result
             next_question = random.choice(result)
-            # check if we have exhausted the questions
-            # next_question = get_random_question()
-
-            # used = False
-            # if next_question['id'] in previous_questions:
-            #     used = True
-
-            # while used:
-            #     next_question = random.choice(questions).format()
-
-            #     if (len(previous_questions) == len(questions)):
-            #         return jsonify({
-            #             'success': True,
-            #             'message': "game over"
-            #         }), 200
-
-            return jsonify({
+            
+            while next_question.id in previous_questions:
+                return jsonify({
+                    'success': True,
+                    'message': "game over"
+            }), 200
+                
+            while next_question.id not in previous_questions:
+                return jsonify({
                 'success': True,
                 'question': next_question.format()
-            })
-        # if user selected a category
-        # if previous_questions['id'] != 0:
-        #     questions = Question.query.filter_by(
-        #         category=previous_questions['id']).all()
-        # # if user selected "All"
-        # else:
-        #     questions = Question.query.all()
-
-        # def get_random_question():
-        #     next_question = random.choice(questions).format()
-        #     return next_question
-
-        # next_question = get_random_question()
-
-        # used = False
-        # if next_question['id'] in previous_questions:
-        #     used = True
-
-        # while used:
-        #     next_question = random.choice(questions).format()
-
-        #     if (len(previous_questions) == len(questions)):
-        #         return jsonify({
-        #             'success': True,
-        #             'message': "game over"
-        #         }), 200
-
-        # return jsonify({
-        #     'success': True,
-        #     'question': next_question
-        # }), 200
-        # except:
-        #     abort(400)
-
+            }), 200
         except:
-            abort(400)
+            abort(422)
     """
     @TODO:
     Create error handlers for all expected errors

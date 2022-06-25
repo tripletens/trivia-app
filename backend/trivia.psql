@@ -119,7 +119,9 @@ COPY public.categories (id, type) FROM stdin;
 \.
 
 
-
+--
+-- Data for Name: questions; Type: TABLE DATA; Schema: public; Owner: student
+--
 
 COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 5	Whose autobiography is entitled 'I Know Why the Caged Bird Sings'?	Maya Angelou	2	4
@@ -133,9 +135,10 @@ COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 13	What is the largest lake in Africa?	Lake Victoria	2	3
 \.
 
-COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
+
 14	In which royal palace would you find the Hall of Mirrors?	The Palace of Versailles	3	3
 15	The Taj Mahal is located in which Indian city?	Agra	2	3
+16	Which Dutch graphic artist–initials M C was a creator of optical illusions?	Escher	1	2
 17	La Giaconda is better known as what?	Mona Lisa	3	2
 18	How many paintings did Van Gogh sell in his lifetime?	One	4	2
 19	Which American artist was a pioneer of Abstract Expressionism, and a leading exponent of action painting?	Jackson Pollock	2	2
@@ -143,15 +146,7 @@ COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
 21	Who discovered penicillin?	Alexander Fleming	3	1
 22	Hematology is a branch of medicine involving the study of what?	Blood	4	1
 23	Which dung beetle was worshipped by the ancient Egyptians?	Scarab	4	4
-\.
-
-
-
-16	Which Dutch graphic artist–initials M C was a creator of optical illusions?	Escher	1	2
-
-
-COPY public.questions (id, question, answer, difficulty, category) FROM stdin;
-16	Which Dutch graphic artist–initials M C was a creator of optical illusions?	Escher	1	2
+\
 --
 -- Name: categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: student
 --
